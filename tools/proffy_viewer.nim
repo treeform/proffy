@@ -1,5 +1,5 @@
 
-import fidget, proffy, tables, chroma, vmath, strformat
+import fidget, proffy, tables, chroma, vmath, strformat, hashes
 
 const
   TURQUOISE1 = "#1ABC9C".parseHtmlColor
@@ -68,19 +68,24 @@ proc drawMain() =
 
         for traceId, trace in profile.traces:
           let x = (trace.timeStart - offset).float64 * zoom
-          let w = (trace.timeEnd - offset).float64 * zoom  - x
+          let w = (trace.timeEnd - offset).float64 * zoom - x
 
           if x > root.box.w or x + w < 0:
             continue
 
+          if w < 0.1:
+            continue
+
           group "trace":
-            box x, trace.level * 20, max(w, 5), 20
+            let name = profile.names[trace.nameKey]
+            box x, trace.level * 20, max(w, 1), 20
             if selTraceId == traceId:
               fill GREEN1
               onHover:
                 fill GREEN2
             else:
-              fill colors[trace.level mod colors.len]
+              let h = (abs(hash(name)) mod 360_000).float32 / 1000.0
+              fill hsv(h, 100.0, 100.0).color
               onHover:
                 fill RED2
             onClick:
@@ -92,7 +97,7 @@ proc drawMain() =
                 box 2, 0, 1000, 20
                 fill BLACK
                 font "IBMPlex", 16, 400, 20, hLeft, vCenter
-                characters profile.names[trace.nameKey]
+                characters name
 
     if selTraceId != -1:
       let trace = profile.traces[selTraceId]
