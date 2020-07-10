@@ -43,6 +43,7 @@ proc initProfile*(threadName: string) =
   profile.threadName = threadName
 
 proc pushTrace*(kind: TraceKind, name: string) =
+  if profile == nil: return
   var trace = Trace()
   trace.kind = kind
   trace.nameKey = profile.place(name)
@@ -58,20 +59,22 @@ proc pushTrace*(kind: TraceKind, name: string) =
   profile.traces.add(trace)
 
 proc popTrace*() =
+  if profile == nil: return
   let index = profile.traceStack.pop()
   profile.traces[index].timeEnd = getMonoTime().ticks
 
 proc profDump*() =
-  discard existsOrCreateDir("proffy")
+  if profile == nil: return
+  discard existsOrCreateDir(getHomeDir() / ".proffy")
 
   profile.namesBack.clear()
   var data = profile.toFlatty()
   data = compress(data)
   echo "writing profile ... ", data.len, " bytes"
-  writeFile("proffy" / profile.threadName & ".proffy", data)
+  writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
 
 proc profLoad*() =
-  for fileName in walkFiles("proffy/*.proffy"):
+  for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
     var data = readFile(fileName)
     echo "reading profile ... ", data.len, " bytes"
     data = uncompress(data)
