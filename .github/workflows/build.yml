@@ -6,9 +6,11 @@ jobs:
 
     steps:
       - name: "install choosenim"
+        shell: cmd
         run: curl -OL https://github.com/dom96/choosenim/releases/download/v0.6.0/choosenim-0.6.0_windows_amd64_debug.exe
 
       - name: "install nim"
+        shell: cmd
         run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel --firstInstall
 
       - name: "show version"
