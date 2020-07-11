@@ -1,13 +1,7 @@
 ## Frame based, instrumentation profiler for games.
-import tables, print, std/monotimes, os, flatty, supersnappy
+import tables, print, std/monotimes, os, flatty, supersnappy, strformat
 
 type
-
-  StackFrame* = object
-    procNameKey*: int
-    line*: int
-    filenameKey*: int
-
   TraceKind* = enum
     tkFrame
     tkMark
@@ -18,7 +12,7 @@ type
     timeStart*: int64
     timeEnd*: int64
     level*: int
-    stackTrace*: seq[StackFrame]
+    stackTraceKey*: int
 
   Profile* = ref object
     threadName*: string
@@ -27,7 +21,7 @@ type
     traces*: seq[Trace]
     traceStack*: seq[int]
 
-proc place(profile: Profile, s: string): int =
+proc intern(profile: Profile, s: string): int =
   if s in profile.namesBack:
     result = profile.namesBack[s]
   else:
@@ -37,6 +31,7 @@ proc place(profile: Profile, s: string): int =
 
 var
   profile* {.threadvar.}: Profile
+  profiles*: seq[Profile]
 
 proc initProfile*(threadName: string) =
   profile = Profile()
@@ -46,16 +41,14 @@ proc pushTrace*(kind: TraceKind, name: string) =
   if profile == nil: return
   var trace = Trace()
   trace.kind = kind
-  trace.nameKey = profile.place(name)
+  trace.nameKey = profile.intern(name)
   trace.timeStart = getMonoTime().ticks
   trace.level = profile.traceStack.len
   profile.traceStack.add(profile.traces.len)
-  for e in getStackTraceEntries():
-    var s = StackFrame()
-    s.procNameKey = profile.place($e.procname)
-    s.line = e.line
-    s.filenameKey = profile.place($e.filename)
-    trace.stackTrace.add(s)
+  var stackTrace = ""
+  for e in getStackTraceEntries()[0 ..^ 2]:
+    stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
+  trace.stackTraceKey = profile.intern(stackTrace)
   profile.traces.add(trace)
 
 proc popTrace*() =
@@ -79,4 +72,4 @@ proc profLoad*() =
     echo "reading profile ... ", data.len, " bytes"
     data = uncompress(data)
     profile = data.fromFlatty(Profile)
-    break
+    profiles.add(profile)
