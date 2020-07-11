@@ -12,10 +12,10 @@ jobs:
         run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel
 
       - name: "setup path"
-        run: ::add-path::"%homepath%/.nimble/bin"
+        run: ::add-path::"%homepath%/.nimble/bin
 
       - name: "show version"
-        run: "%homepath%/.nimble/bin/nim" -v
+        run: %homepath%/.nimble/bin/nim -v
 
       - name: "show version 2"
-        run: "nim" -v
+        run: nim -v
