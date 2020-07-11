@@ -11,11 +11,11 @@ jobs:
       - name: "install nim"
         run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel
 
-      - name: "setup path"
-        run: ::add-path::%homepath%/.nimble/bin
-
       - name: "show version"
         run: \%homepath\%/.nimble/bin/nim -v
+
+      - name: "setup path"
+        run: echo "::add-path::%homepath%/.nimble/bin"
 
       - name: "show version 2"
         run: nim -v
