@@ -5,4 +5,4 @@ jobs:
     runs-on: windows-2019
 
     steps:
-    - run: choco install nim
+    - run: curl -OL https://github.com/dom96/choosenim/releases/download/v0.6.0/choosenim-0.6.0_windows_amd64_debug.exe
