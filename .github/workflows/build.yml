@@ -15,7 +15,7 @@ jobs:
         run: ::add-path::%homepath%/.nimble/bin
 
       - name: "show version"
-        run: %homepath%/.nimble/bin/nim -v
+        run: \%homepath\%/.nimble/bin/nim -v
 
       - name: "show version 2"
         run: nim -v
