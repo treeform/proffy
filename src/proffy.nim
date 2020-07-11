@@ -45,10 +45,11 @@ proc pushTrace*(kind: TraceKind, name: string) =
   trace.timeStart = getMonoTime().ticks
   trace.level = profile.traceStack.len
   profile.traceStack.add(profile.traces.len)
-  var stackTrace = ""
-  for e in getStackTraceEntries()[0 ..^ 2]:
-    stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
-  trace.stackTraceKey = profile.intern(stackTrace)
+  when not defined(release):
+    var stackTrace = ""
+    for e in getStackTraceEntries()[0 ..^ 2]:
+      stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
+    trace.stackTraceKey = profile.intern(stackTrace)
   profile.traces.add(trace)
 
 proc popTrace*() =
