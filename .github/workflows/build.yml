@@ -5,17 +5,22 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - name: "install choosenim"
-        run: curl -OL https://github.com/dom96/choosenim/releases/download/v0.6.0/choosenim-0.6.0_windows_amd64_debug.exe
+    - uses: actions/checkout@v1
 
-      - name: "install nim"
-        run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel
+    - name: "install choosenim"
+      id: cache-choosenim
+      run: curl -OL https://github.com/dom96/choosenim/releases/download/v0.6.0/choosenim-0.6.0_windows_amd64_debug.exe
 
-      - name: "setup nim path"
-        run: echo "::add-path::C:\Users\runneradmin\.nimble\bin"
+    - name: "install nim"
+      id: cache-nim
+      run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel
 
-      - name: "show nim version"
-        run: nim -v
+    - name: "setup nim path"
+      id: cache-nim-path
+      run: echo "::add-path::C:\Users\runneradmin\.nimble\bin"
 
-      - name: "nimble test"
-        run: nimble test
+    - name: "show nim version"
+      run: nim -v
+
+    - name: "nimble test"
+      run: nimble test
