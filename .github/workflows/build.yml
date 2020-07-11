@@ -5,4 +5,4 @@ jobs:
     runs-on: windows-2019
 
     steps:
-    - run: scoop install nim
+    - run: choco install nim
