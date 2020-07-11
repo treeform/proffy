@@ -36,6 +36,7 @@ var
 proc initProfile*(threadName: string) =
   profile = Profile()
   profile.threadName = threadName
+  discard profile.intern("")
 
 proc pushTrace*(kind: TraceKind, name: string) =
   if profile == nil: return

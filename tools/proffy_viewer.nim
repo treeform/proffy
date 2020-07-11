@@ -162,10 +162,7 @@ Stack Trace:
       var d = anchor - mouse.pos
       anchor = mouse.pos
       offset += (mouse.pos.x / zoom).int
-      if d.y > 0:
-        zoom *= 1.05
-      if d.y < 0:
-        zoom *= 0.95
+      zoom *= 1.0 + 0.025 * d.y
       zoom = clamp(zoom, 0.0000001, 10)
       offset += (d.x / zoom).int
       offset -= (mouse.pos.x / zoom).int
