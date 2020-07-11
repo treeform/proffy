@@ -14,8 +14,11 @@ jobs:
       - name: "show version"
         run: ~/.nimble/bin/nim -v
 
+      - name: "show version 1"
+        run: C:\Users\runneradmin\.nimble\bin/nim -v
+
       - name: "setup path"
-        run: echo "::add-path::~/.nimble/bin"
+        run: echo "::add-path::C:\Users\runneradmin\.nimble\bin"
 
       - name: "show version 2"
         run: nim -v
