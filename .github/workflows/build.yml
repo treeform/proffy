@@ -11,14 +11,11 @@ jobs:
       - name: "install nim"
         run: .\choosenim-0.6.0_windows_amd64_debug.exe -y devel
 
-      - name: "show version"
-        run: ~/.nimble/bin/nim -v
-
-      - name: "show version 1"
-        run: C:\Users\runneradmin\.nimble\bin/nim -v
-
-      - name: "setup path"
+      - name: "setup nim path"
         run: echo "::add-path::C:\Users\runneradmin\.nimble\bin"
 
-      - name: "show version 2"
+      - name: "show nim version"
         run: nim -v
+
+      - name: "nimble test"
+        run: nimble test
