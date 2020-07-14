@@ -17,7 +17,7 @@ type
 
   Profile* = ref object
     threadName*: string
-    names*: Table[uint16, string]
+    names*: seq[string]
     namesBack*: Table[string, uint16]
     traces*: seq[Trace]
     traceStack*: seq[uint16]
@@ -31,7 +31,7 @@ proc intern(profile: Profile, s: string): uint16 =
     result = profile.namesBack[s]
   else:
     result = profile.names.len.uint16
-    profile.names[result] = s
+    profile.names.add(s)
     profile.namesBack[s] = result
     assert profile.names.len < high(uint16).int
 
@@ -47,7 +47,7 @@ proc pushTrace*(kind: TraceKind, name: string) =
   trace.nameKey = profile.intern(name)
   trace.timeStart = getMonoTime().ticks
   trace.level = profile.traceStack.len.uint16
-  profile.traceStack.add(trace.level)
+  profile.traceStack.add(profile.traces.len.uint16)
   assert profile.traceStack.len < high(uint16).int
   when not defined(release):
     var stackTrace = ""

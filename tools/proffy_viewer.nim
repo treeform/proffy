@@ -47,7 +47,7 @@ type
     total: int64
 
 var
-  statistics: Table[int, Stats]
+  statistics: Table[uint16, Stats]
 for profile in profiles:
   for traceId, trace in profile.traces:
     let time = trace.timeEnd - trace.timeStart
@@ -104,7 +104,7 @@ proc drawMain() =
 
             group "trace":
               let name = profile.names[trace.nameKey]
-              box x, trace.level * 20, max(w, 1), 20
+              box x, trace.level.int * 20, max(w, 1), 20
               if selTraceId == traceId and selThreadId == threadId:
                 fill GREEN1
                 onHover:
