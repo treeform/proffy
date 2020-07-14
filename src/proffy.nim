@@ -1,5 +1,6 @@
-## Frame based, instrumentation profiler for games.
-import tables, print, std/monotimes, os, flatty, supersnappy, strformat
+## Frame based instrumentation profiler for games.
+
+import flatty, os, std/monotimes, strformat, supersnappy, tables
 
 type
   TraceKind* = enum
@@ -8,30 +9,31 @@ type
 
   Trace* = object
     kind*: TraceKind
-    nameKey*: int
+    nameKey*: uint16
     timeStart*: int64
     timeEnd*: int64
-    level*: int
-    stackTraceKey*: int
+    level*: uint16
+    stackTraceKey*: uint16
 
   Profile* = ref object
     threadName*: string
-    names*: Table[int, string]
-    namesBack*: Table[string, int]
+    names*: Table[uint16, string]
+    namesBack*: Table[string, uint16]
     traces*: seq[Trace]
-    traceStack*: seq[int]
-
-proc intern(profile: Profile, s: string): int =
-  if s in profile.namesBack:
-    result = profile.namesBack[s]
-  else:
-    result = profile.names.len
-    profile.names[result] = s
-    profile.namesBack[s] = result
+    traceStack*: seq[uint16]
 
 var
   profile* {.threadvar.}: Profile
   profiles*: seq[Profile]
+
+proc intern(profile: Profile, s: string): uint16 =
+  if s in profile.namesBack:
+    result = profile.namesBack[s]
+  else:
+    result = profile.names.len.uint16
+    profile.names[result] = s
+    profile.namesBack[s] = result
+    assert profile.names.len < high(uint16).int
 
 proc initProfile*(threadName: string) =
   profile = Profile()
@@ -44,8 +46,9 @@ proc pushTrace*(kind: TraceKind, name: string) =
   trace.kind = kind
   trace.nameKey = profile.intern(name)
   trace.timeStart = getMonoTime().ticks
-  trace.level = profile.traceStack.len
-  profile.traceStack.add(profile.traces.len)
+  trace.level = profile.traceStack.len.uint16
+  profile.traceStack.add(trace.level)
+  assert profile.traceStack.len < high(uint16).int
   when not defined(release):
     var stackTrace = ""
     for e in getStackTraceEntries()[0 ..^ 2]:
