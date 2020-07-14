@@ -1,5 +1,5 @@
 
-import fidget, proffy, tables, chroma, vmath, strformat, hashes
+import chroma, fidget, hashes, proffy, strformat, tables, vmath
 
 const
   TURQUOISE1 = "#1ABC9C".parseHtmlColor
