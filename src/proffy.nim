@@ -12,6 +12,7 @@ type
     timeStart*: int64
     timeEnd*: int64
     level*: int
+    parent*: int
     stackTraceKey*: int
 
   Profile* = ref object
@@ -45,6 +46,8 @@ proc pushTrace*(kind: TraceKind, name: string) =
   trace.nameKey = profile.intern(name)
   trace.timeStart = getMonoTime().ticks
   trace.level = profile.traceStack.len
+  if profile.traceStack.len > 0:
+    trace.parent = profile.traceStack[^1]
   profile.traceStack.add(profile.traces.len)
   when not defined(release):
     var stackTrace = ""
