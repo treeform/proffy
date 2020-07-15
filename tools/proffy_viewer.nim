@@ -1,5 +1,6 @@
 
-import fidget, proffy, tables, chroma, vmath, strformat, hashes, sequtils, algorithm, strutils
+import algorithm, chroma, fidget, hashes, proffy, sequtils, strformat, strutils,
+    tables, vmath
 
 const
   TURQUOISE1 = "#1ABC9C".parseHtmlColor
@@ -38,7 +39,6 @@ const
 
 proc hasPrefix(a, b: string): bool =
   a.len >= b.len and a[0 ..< b.len] == b
-
 
 type
   ViewKind = enum
@@ -114,11 +114,9 @@ proc computeStats() =
 
     s.avgSelf = s.totalSelf.float64 / s.num.float64
 
-
 loadFont("IBMPlex", "fonts/IBMPlexSans-Regular.ttf")
 loadFont("Inconsolata", "fonts/Inconsolata-Regular.ttf")
 setTitle("Proffy Viewer 2000")
-
 
 profLoad()
 computeStats()
@@ -323,7 +321,6 @@ proc drawTreeView() =
         font "IBMPlex", 16, 400, 20, hRight, vCenter
         characters "num calls"
 
-
 proc headerTabButton(viewKind: ViewKind) =
   component "MenuButton":
     fill BLUE1, 0.5
@@ -373,6 +370,5 @@ proc drawMain() =
       drawTimelineView()
     of TreeView:
       drawTreeView()
-
 
 startFidget(drawMain, w = 1200, h = 1200)

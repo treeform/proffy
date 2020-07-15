@@ -1,5 +1,6 @@
 ## Frame based, instrumentation profiler for games.
-import tables, print, std/monotimes, os, flatty, supersnappy, strformat
+
+import flatty, os, print, std/monotimes, strformat, supersnappy, tables
 
 type
   TraceKind* = enum
