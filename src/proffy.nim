@@ -40,7 +40,7 @@ proc initProfile*(threadName: string) =
     profile.threadName = threadName
     discard profile.intern("")
 
-proc pushTrace*(kind: TraceKind, name: string) =
+proc pushTraceWithSideEffects(kind: TraceKind, name: string) =
   when defined(proffy):
     if profile == nil: return
     var trace = Trace()
@@ -57,11 +57,19 @@ proc pushTrace*(kind: TraceKind, name: string) =
       trace.stackTraceKey = profile.intern(stackTrace)
     profile.traces.add(trace)
 
-proc popTrace*() =
+func pushTrace*(kind: TraceKind, name: string) =
+  cast[proc (kind: TraceKind, name: string) {.nimcall, noSideEffect.}](
+    pushTraceWithSideEffects
+  )(kind, name)
+
+proc popTraceWithSideEffects() =
   when defined(proffy):
     if profile == nil: return
     let index = profile.traceStack.pop()
     profile.traces[index].timeEnd = getMonoTime().ticks
+
+func popTrace*() =
+  cast[proc () {.nimcall, noSideEffect.}](popTraceWithSideEffects)()
 
 proc profDump*() =
   when defined(proffy):
