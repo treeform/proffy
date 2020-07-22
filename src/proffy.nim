@@ -87,5 +87,4 @@ proc profLoad*(): seq[Profile] =
     var data = readFile(fileName)
     echo "reading profile ... ", data.len, " bytes"
     data = uncompress(data)
-    profile = data.fromFlatty(Profile)
-    result.add(profile)
+    result.add(data.fromFlatty(Profile))
