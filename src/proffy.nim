@@ -24,7 +24,6 @@ type
 
 var
   profile* {.threadvar.}: Profile
-  profiles*: seq[Profile]
 
 proc intern(profile: Profile, s: string): uint16 =
   if s in profile.namesBack:
@@ -36,45 +35,56 @@ proc intern(profile: Profile, s: string): uint16 =
     assert profile.names.len < high(uint16).int
 
 proc initProfile*(threadName: string) =
-  profile = Profile()
-  profile.threadName = threadName
-  discard profile.intern("")
+  when defined(proffy):
+    profile = Profile()
+    profile.threadName = threadName
+    discard profile.intern("")
 
-proc pushTrace*(kind: TraceKind, name: string) =
-  if profile == nil: return
-  var trace = Trace()
-  trace.kind = kind
-  trace.nameKey = profile.intern(name)
-  trace.timeStart = getMonoTime().ticks
-  trace.level = profile.traceStack.len.uint16
-  profile.traceStack.add(profile.traces.len.uint16)
-  assert profile.traceStack.len < high(uint16).int
-  when not defined(release):
-    var stackTrace = ""
-    for e in getStackTraceEntries()[0 ..^ 2]:
-      stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
-    trace.stackTraceKey = profile.intern(stackTrace)
-  profile.traces.add(trace)
+proc pushTraceWithSideEffects(kind: TraceKind, name: string) =
+  when defined(proffy):
+    if profile == nil: return
+    var trace = Trace()
+    trace.kind = kind
+    trace.nameKey = profile.intern(name)
+    trace.timeStart = getMonoTime().ticks
+    trace.level = profile.traceStack.len.uint16
+    profile.traceStack.add(profile.traces.len.uint16)
+    assert profile.traceStack.len < high(uint16).int
+    when not defined(release):
+      var stackTrace = ""
+      for e in getStackTraceEntries()[0 ..^ 2]:
+        stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
+      trace.stackTraceKey = profile.intern(stackTrace)
+    profile.traces.add(trace)
 
-proc popTrace*() =
-  if profile == nil: return
-  let index = profile.traceStack.pop()
-  profile.traces[index].timeEnd = getMonoTime().ticks
+func pushTrace*(kind: TraceKind, name: string) =
+  cast[proc (kind: TraceKind, name: string) {.nimcall, noSideEffect.}](
+    pushTraceWithSideEffects
+  )(kind, name)
+
+proc popTraceWithSideEffects() =
+  when defined(proffy):
+    if profile == nil: return
+    let index = profile.traceStack.pop()
+    profile.traces[index].timeEnd = getMonoTime().ticks
+
+func popTrace*() =
+  cast[proc () {.nimcall, noSideEffect.}](popTraceWithSideEffects)()
 
 proc profDump*() =
-  if profile == nil: return
-  discard existsOrCreateDir(getHomeDir() / ".proffy")
+  when defined(proffy):
+    if profile == nil: return
+    discard existsOrCreateDir(getHomeDir() / ".proffy")
 
-  profile.namesBack.clear()
-  var data = profile.toFlatty()
-  data = compress(data)
-  echo "writing profile ... ", data.len, " bytes"
-  writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
+    profile.namesBack.clear()
+    var data = profile.toFlatty()
+    data = compress(data)
+    echo "writing profile ... ", data.len, " bytes"
+    writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
 
-proc profLoad*() =
+proc profLoad*(): seq[Profile] =
   for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
     var data = readFile(fileName)
     echo "reading profile ... ", data.len, " bytes"
     data = uncompress(data)
-    profile = data.fromFlatty(Profile)
-    profiles.add(profile)
+    result.add(data.fromFlatty(Profile))

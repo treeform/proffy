@@ -36,7 +36,7 @@ const
     RED1,
   ]
 
-profLoad()
+let profiles = profLoad()
 
 type
   Stats = ref object
