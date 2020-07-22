@@ -24,7 +24,6 @@ type
 
 var
   profile* {.threadvar.}: Profile
-  profiles*: seq[Profile]
 
 proc intern(profile: Profile, s: string): uint16 =
   if s in profile.namesBack:
@@ -71,10 +70,10 @@ proc profDump*() =
   echo "writing profile ... ", data.len, " bytes"
   writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
 
-proc profLoad*() =
+proc profLoad*(): seq[Profile] =
   for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
     var data = readFile(fileName)
     echo "reading profile ... ", data.len, " bytes"
     data = uncompress(data)
     profile = data.fromFlatty(Profile)
-    profiles.add(profile)
+    result.add(profile)
