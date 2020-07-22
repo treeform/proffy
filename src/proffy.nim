@@ -35,40 +35,44 @@ proc intern(profile: Profile, s: string): uint16 =
     assert profile.names.len < high(uint16).int
 
 proc initProfile*(threadName: string) =
-  profile = Profile()
-  profile.threadName = threadName
-  discard profile.intern("")
+  when defined(proffy):
+    profile = Profile()
+    profile.threadName = threadName
+    discard profile.intern("")
 
 proc pushTrace*(kind: TraceKind, name: string) =
-  if profile == nil: return
-  var trace = Trace()
-  trace.kind = kind
-  trace.nameKey = profile.intern(name)
-  trace.timeStart = getMonoTime().ticks
-  trace.level = profile.traceStack.len.uint16
-  profile.traceStack.add(profile.traces.len.uint16)
-  assert profile.traceStack.len < high(uint16).int
-  when not defined(release):
-    var stackTrace = ""
-    for e in getStackTraceEntries()[0 ..^ 2]:
-      stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
-    trace.stackTraceKey = profile.intern(stackTrace)
-  profile.traces.add(trace)
+  when defined(proffy):
+    if profile == nil: return
+    var trace = Trace()
+    trace.kind = kind
+    trace.nameKey = profile.intern(name)
+    trace.timeStart = getMonoTime().ticks
+    trace.level = profile.traceStack.len.uint16
+    profile.traceStack.add(profile.traces.len.uint16)
+    assert profile.traceStack.len < high(uint16).int
+    when not defined(release):
+      var stackTrace = ""
+      for e in getStackTraceEntries()[0 ..^ 2]:
+        stackTrace.add(&"  {e.procname} line: {e.line} {e.filename}\n")
+      trace.stackTraceKey = profile.intern(stackTrace)
+    profile.traces.add(trace)
 
 proc popTrace*() =
-  if profile == nil: return
-  let index = profile.traceStack.pop()
-  profile.traces[index].timeEnd = getMonoTime().ticks
+  when defined(proffy):
+    if profile == nil: return
+    let index = profile.traceStack.pop()
+    profile.traces[index].timeEnd = getMonoTime().ticks
 
 proc profDump*() =
-  if profile == nil: return
-  discard existsOrCreateDir(getHomeDir() / ".proffy")
+  when defined(proffy):
+    if profile == nil: return
+    discard existsOrCreateDir(getHomeDir() / ".proffy")
 
-  profile.namesBack.clear()
-  var data = profile.toFlatty()
-  data = compress(data)
-  echo "writing profile ... ", data.len, " bytes"
-  writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
+    profile.namesBack.clear()
+    var data = profile.toFlatty()
+    data = compress(data)
+    echo "writing profile ... ", data.len, " bytes"
+    writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
 
 proc profLoad*(): seq[Profile] =
   for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
