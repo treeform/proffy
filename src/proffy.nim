@@ -21,7 +21,7 @@ type
     names*: seq[string]
     namesBack*: Table[string, uint16]
     traces*: seq[Trace]
-    traceStack*: seq[uint16]
+    traceStack*: seq[int]
 
 var
   profiles*: seq[Profile]
@@ -49,7 +49,7 @@ proc pushTraceWithSideEffects(kind: TraceKind, name: string) =
     trace.nameKey = profile.intern(name)
     trace.timeStart = getMonoTime().ticks
     trace.level = profile.traceStack.len.uint16
-    profile.traceStack.add(profile.traces.len.uint16)
+    profile.traceStack.add(profile.traces.len)
     assert profile.traceStack.len < high(uint16).int
     when not defined(release):
       var stackTrace = ""
