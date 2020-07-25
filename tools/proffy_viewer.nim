@@ -48,7 +48,10 @@ type
 var
   statistics: Table[uint16, Stats]
 for profile in profiles:
-  for traceId, trace in profile.traces:
+  for traceId, trace in profile.traces.mpairs:
+    if trace.timeEnd == 0:
+      echo profile.names[trace.nameKey], " ", trace.timeStart, " ... ", trace.timeEnd
+      trace.timeEnd = trace.timeStart
     let time = trace.timeEnd - trace.timeStart
     if trace.nameKey notin statistics:
       statistics[trace.nameKey] = Stats()

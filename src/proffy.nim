@@ -1,6 +1,7 @@
 ## Frame based instrumentation profiler for games.
 
-import flatty, os, std/monotimes, strformat, supersnappy, tables
+import flatty, os, std/monotimes, strformat, supersnappy, tables, macros,
+    sequtils, algorithm, times
 
 type
   TraceKind* = enum
@@ -64,11 +65,11 @@ func pushTrace*(kind: TraceKind, name: string) =
 
 proc popTraceWithSideEffects() =
   when defined(proffy):
-    if profileIdx == 0:
-      let
-        profile = profiles[profileIdx]
-        traceIdx = profile.traceStack.pop()
-      profile.traces[traceIdx].timeEnd = getMonoTime().ticks
+    let
+      profile = profiles[profileIdx]
+      traceIdx = profile.traceStack.pop()
+    profile.traces[traceIdx].timeEnd = getMonoTime().ticks
+    assert profile.traces[traceIdx].timeEnd != 0
 
 func popTrace*() =
   cast[proc () {.nimcall, noSideEffect.}](popTraceWithSideEffects)()
@@ -78,14 +79,35 @@ proc profDump*() =
     discard existsOrCreateDir(getHomeDir() / ".proffy")
     for profile in profiles:
       profile.namesBack.clear()
-      var data = profile.toFlatty()
-      data = compress(data)
-      echo "writing profile ... ", data.len, " bytes"
-      writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
+    var data = profiles.toFlatty()
+    data = compress(data)
+    let time = format(fromUnix(epochTime().int), "yyyy-MM-dd'_'HHmm")
+    let fileName = getHomeDir() / ".proffy" / time & ".proffy"
+    echo "writing profile ... ", fileName, " ", data.len, " bytes"
+    writeFile(fileName, data)
 
 proc profLoad*(): seq[Profile] =
-  for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
-    var data = readFile(fileName)
-    echo "reading profile ... ", data.len, " bytes"
-    data = uncompress(data)
-    result.add(data.fromFlatty(Profile))
+  var s = toSeq(walkFiles(getHomeDir() / ".proffy/*.proffy"))
+  s.sort()
+  let fileName = s[^1]
+  var data = readFile(fileName)
+  echo "reading profile ... ", fileName, " ", data.len, " bytes"
+  data = uncompress(data)
+  data.fromFlatty(seq[Profile])
+
+macro trace*(fn: untyped): untyped =
+  when defined(proffy):
+    var body = fn[6]
+    let fnName =
+      if fn[0].kind == nnkIdent:
+        fn[0].strVal
+      else:
+        fn[0][1].strVal
+    let newBody = quote do:
+      try:
+        pushTrace(tkMark, `fnName`)
+        `body`
+      finally:
+        popTrace()
+    fn[6] = newBody
+  return fn
