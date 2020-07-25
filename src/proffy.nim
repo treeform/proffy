@@ -23,7 +23,8 @@ type
     traceStack*: seq[uint16]
 
 var
-  profile* {.threadvar.}: Profile
+  profiles*: seq[Profile]
+  profileIdx* {.threadvar.}: int
 
 proc intern(profile: Profile, s: string): uint16 =
   if s in profile.namesBack:
@@ -34,15 +35,14 @@ proc intern(profile: Profile, s: string): uint16 =
     profile.namesBack[s] = result
     assert profile.names.len < high(uint16).int
 
-proc initProfile*(threadName: string) =
-  when defined(proffy):
-    profile = Profile()
-    profile.threadName = threadName
-    discard profile.intern("")
+proc newProfile*(threadName: string): Profile =
+  result = Profile()
+  result.threadName = threadName
+  discard result.intern("")
 
 proc pushTraceWithSideEffects(kind: TraceKind, name: string) =
   when defined(proffy):
-    if profile == nil: return
+    let profile = profiles[profileIdx]
     var trace = Trace()
     trace.kind = kind
     trace.nameKey = profile.intern(name)
@@ -64,23 +64,24 @@ func pushTrace*(kind: TraceKind, name: string) =
 
 proc popTraceWithSideEffects() =
   when defined(proffy):
-    if profile == nil: return
-    let index = profile.traceStack.pop()
-    profile.traces[index].timeEnd = getMonoTime().ticks
+    if profileIdx == 0:
+      let
+        profile = profiles[profileIdx]
+        traceIdx = profile.traceStack.pop()
+      profile.traces[traceIdx].timeEnd = getMonoTime().ticks
 
 func popTrace*() =
   cast[proc () {.nimcall, noSideEffect.}](popTraceWithSideEffects)()
 
 proc profDump*() =
   when defined(proffy):
-    if profile == nil: return
     discard existsOrCreateDir(getHomeDir() / ".proffy")
-
-    profile.namesBack.clear()
-    var data = profile.toFlatty()
-    data = compress(data)
-    echo "writing profile ... ", data.len, " bytes"
-    writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
+    for profile in profiles:
+      profile.namesBack.clear()
+      var data = profile.toFlatty()
+      data = compress(data)
+      echo "writing profile ... ", data.len, " bytes"
+      writeFile(getHomeDir() / ".proffy" / profile.threadName & ".proffy", data)
 
 proc profLoad*(): seq[Profile] =
   for fileName in walkFiles(getHomeDir() / ".proffy/*.proffy"):
