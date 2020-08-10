@@ -32,8 +32,8 @@ proc intern(profile: Profile, s: string): uint16 =
     result = profile.namesBack[s]
   else:
     result = profile.names.len.uint16
-    profile.names.add(s)
     profile.namesBack[s] = result
+    profile.names.add(s)
     assert profile.names.len < high(uint16).int
 
 proc newProfile*(threadName: string): Profile =
